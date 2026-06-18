@@ -211,6 +211,7 @@ function SetupScreen({
   savedSessions,
 }: SetupScreenProps) {
   const latestSession = savedSessions[savedSessions.length - 1];
+  const frequencyLabel = `${DEFAULT_TRAINING_CONFIG.spatialFrequencies.join(', ')} cpd`;
 
   return (
     <section className="setup-layout">
@@ -299,7 +300,7 @@ function SetupScreen({
         <Metric label="Assessment" value={`${DEFAULT_TRAINING_CONFIG.assessmentTrialCount} trials`} />
         <Metric label="Training" value={`${DEFAULT_TRAINING_CONFIG.trainingTrialCount} trials`} />
         <Metric label="Retest" value={`${DEFAULT_TRAINING_CONFIG.retestTrialCount} trials`} />
-        <Metric label="Frequencies" value="1, 2, 4, 8, 12 cpd" />
+        <Metric label="Frequencies" value={frequencyLabel} />
         <Metric label="Task" value={taskTypeLabel[taskType]} />
         <Metric label="Screen PPI" value={Math.round(screenPpi)} />
         <Metric label="Viewing distance" value={`${viewingDistanceCm} cm`} />

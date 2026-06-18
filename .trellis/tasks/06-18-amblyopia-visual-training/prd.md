@@ -11,7 +11,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - The current repository has no application scaffold yet. It only contains Trellis metadata and `AGENTS.md`.
 - The supplied design specifies the core loop: choose training eye, present Gabor stimulus, answer, update QUEST/ZEST threshold estimate, generate next difficulty, save trial data, and display threshold changes by spatial frequency.
 - MVP task types are Contrast Detection and Orientation Discrimination.
-- Default spatial frequencies are `1`, `2`, `4`, `8`, and `12` cpd.
+- Default spatial frequencies are `1`, `2`, `4`, and `8` cpd.
 - Each `(taskType, spatialFrequency)` needs an independent `ThresholdState`.
 - Sessions use three segments: quick threshold assessment, threshold-focused training, and short retest.
 - Assessment and retest trials update separate threshold posterior states when valid, so post-test evidence does not overwrite the assessment baseline.
@@ -62,7 +62,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - [ ] User can calibrate screen PPI with a physical reference and set viewing distance before training.
 - [ ] Assessment, threshold-focused training, and retest phases all run.
 - [ ] Default trial counts are 50 assessment, 80 training, and 50 retest trials.
-- [ ] Formal training supports five spatial frequencies: `1`, `2`, `4`, `8`, and `12` cpd.
+- [ ] Formal training supports four spatial frequencies: `1`, `2`, `4`, and `8` cpd.
 - [ ] User can choose Contrast Detection or Orientation Discrimination as separate session modes.
 - [ ] Both task modes work as two-choice tasks.
 - [ ] Left/right arrow keys submit the same answers as the left/right on-screen buttons.

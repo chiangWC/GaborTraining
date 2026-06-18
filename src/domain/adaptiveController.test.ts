@@ -27,7 +27,7 @@ describe('adaptiveController', () => {
   });
 
   it('clamps next contrast within configured bounds', () => {
-    const state = initializeThresholdState('orientation-discrimination', 12);
+    const state = initializeThresholdState('orientation-discrimination', 8);
     const contrast = nextContrastForState(
       {
         ...state,

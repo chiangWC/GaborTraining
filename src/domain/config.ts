@@ -4,7 +4,7 @@ export const DEFAULT_SCREEN_PPI = 110;
 
 export const DEFAULT_TRAINING_CONFIG: TrainingConfig = {
   taskTypes: ['contrast-detection', 'orientation-discrimination'],
-  spatialFrequencies: [1, 2, 4, 8, 12],
+  spatialFrequencies: [1, 2, 4, 8],
   assessmentTrialCount: 50,
   trainingTrialCount: 80,
   retestTrialCount: 50,
