@@ -34,6 +34,7 @@ The project uses TypeScript, ESLint, Vitest, and Vite production builds as the b
 Add or update unit tests for:
 
 - ZEST posterior normalization and threshold estimate changes.
+- ZEST psychometric probability in log-contrast space and simulated user convergence near a known threshold.
 - Assessment/retest posterior updates versus frozen training trials.
 - Training contrast allocation around threshold: easy/core/challenge.
 - Trial generation and frozen random parameters.

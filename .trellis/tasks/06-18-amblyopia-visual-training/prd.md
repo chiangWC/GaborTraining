@@ -14,7 +14,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - Default spatial frequencies are `1`, `2`, `4`, `8`, and `12` cpd.
 - Each `(taskType, spatialFrequency)` needs an independent `ThresholdState`.
 - Sessions use three segments: quick threshold assessment, threshold-focused training, and short retest.
-- Assessment and retest trials update threshold posterior state when valid.
+- Assessment and retest trials update separate threshold posterior states when valid, so post-test evidence does not overwrite the assessment baseline.
 - Training trials freeze the assessment threshold and sample around it for training performance only.
 - Two-choice tasks need `guessRate = 0.5`.
 - Trial random values must be generated once and frozen on the trial object.
@@ -25,7 +25,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - Provide an Eye Training first screen with safety/training instructions and a training-eye selector for left or right eye.
 - Include a quick assessment phase that estimates current thresholds for each spatial frequency.
 - Include a threshold-focused training phase that freezes assessment thresholds and samples contrast around those thresholds.
-- Include a short retest phase that updates posterior again to estimate short-term threshold change.
+- Include a short retest phase that updates a separate posterior to estimate short-term threshold change against the frozen assessment baseline.
 - Training contrast allocation:
   - 20% easy trials: `threshold * 1.3` to `threshold * 1.6`.
   - 60% core trials: `threshold * 0.9` to `threshold * 1.2`.
@@ -39,8 +39,8 @@ The app is a training and trend-observation tool only. It must not present medic
 - Implement simplified ZEST/Bayesian adaptive staircase:
   - Use a log-space threshold grid from approximately `0.01` to `1.00`.
   - Initialize broad prior over useful contrast thresholds.
-  - Use a psychometric function with `guessRate = 0.5`, `lapseRate = 0.03`, `targetCorrectRate = 0.75`, and configurable slope.
-  - Update posterior after each valid assessment/retest response.
+  - Use a psychometric function in log-contrast space because the threshold grid is log-spaced, with `guessRate = 0.5`, `lapseRate = 0.03`, `targetCorrectRate = 0.75`, and configurable slope.
+  - Update the assessment posterior after each valid assessment response and the retest posterior after each valid retest response.
   - Use posterior mean as `currentThresholdEstimate`.
   - Calculate posterior standard deviation as `thresholdUncertainty`.
   - Choose next contrast from the threshold estimate, clamped by `minContrast` and `maxContrast`, with simple recent-error correction.
@@ -48,7 +48,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - Generate each trial with frozen parameters: `trialId`, `sessionId`, `trialIndex`, `isPracticeTrial`, `taskType`, `trainingEye`, `spatialFrequency`, `contrast`, `phase`, `orientation`, `targetPosition`, `correctAnswer`, and timestamps.
 - Mark trials invalid when response time is below `150ms`, when answer times out, when render fails, or when the user exits mid-trial.
 - Save complete session, trial, threshold state, and summary data locally in the browser.
-- Show a result page with training eye, total trials, valid trials, invalid trials, accuracy, duration, mean reaction time, retest threshold by spatial frequency, contrast sensitivity by spatial frequency, and retest-minus-assessment threshold change.
+- Show a result page with training eye, total trials, valid trials, invalid trials, accuracy, duration, mean reaction time, retest threshold by task type and spatial frequency, contrast sensitivity by task type and spatial frequency, and retest-minus-assessment threshold change.
 - Make the result explanation emphasize trend observation and threshold/sensitivity interpretation, not medical conclusions.
 
 ## Acceptance Criteria
@@ -67,9 +67,9 @@ The app is a training and trend-observation tool only. It must not present medic
 - [ ] Training contrast allocation follows the 20% easy / 60% threshold-near / 20% challenge split.
 - [ ] Trial parameters remain stable across React re-renders.
 - [ ] Invalid trials are saved but do not update threshold estimates.
-- [ ] Results include threshold and sensitivity by spatial frequency, not only accuracy.
+- [ ] Results include threshold and sensitivity by task type and spatial frequency, not only accuracy.
 - [ ] Completed sessions are stored locally and can be read back by the app.
-- [ ] Algorithm/generator modules have unit coverage for posterior update, trial freezing, answer scoring, and invalid-trial exclusion.
+- [ ] Algorithm/generator modules have unit coverage for posterior update, simulated ZEST convergence, trial freezing, answer scoring, and invalid-trial exclusion.
 - [ ] Project lint, type-check, and tests pass.
 
 ## Definition of Done

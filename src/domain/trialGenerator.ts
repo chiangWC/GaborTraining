@@ -32,7 +32,8 @@ export function createSession(
     config,
     trials: [],
     thresholdStates: initializeThresholdStates(config),
-    assessmentThresholdByFrequency: null,
+    assessmentThresholdStates: null,
+    retestThresholdStates: null,
     summary: null,
   };
 }
@@ -157,7 +158,8 @@ function chooseThresholdState(
   config: TrainingConfig,
   rng: () => number,
 ): ThresholdState {
-  const taskStates = session.thresholdStates.filter((state) => state.taskType === taskType);
+  const sourceStates = thresholdStatesForPurpose(session, purpose);
+  const taskStates = sourceStates.filter((state) => state.taskType === taskType);
   if (taskStates.length === 0) {
     throw new Error(`Missing threshold states for ${taskType}`);
   }
@@ -182,6 +184,21 @@ function chooseThresholdState(
   }
 
   return selectSpatialFrequency(taskStates, config, rng);
+}
+
+export function thresholdStatesForPurpose(
+  session: TrainingSession,
+  purpose: TrialPurpose,
+): ThresholdState[] {
+  if (purpose === 'retest') {
+    return session.retestThresholdStates ?? session.assessmentThresholdStates ?? session.thresholdStates;
+  }
+
+  if (isTrainingPurpose(purpose)) {
+    return session.assessmentThresholdStates ?? session.thresholdStates;
+  }
+
+  return session.thresholdStates;
 }
 
 export function chooseTrainingPurpose(rng: () => number = Math.random): TrialPurpose {

@@ -85,6 +85,47 @@ describe('trialGenerator', () => {
     expect(trainingFeedback.session?.thresholdStates[0].currentThresholdEstimate).toBe(frozenEstimate);
   });
 
+  it('updates retest posterior separately from the assessment snapshot', () => {
+    const config = {
+      ...DEFAULT_TRAINING_CONFIG,
+      taskTypes: ['contrast-detection' as const],
+      assessmentTrialCount: 1,
+      trainingTrialCount: 1,
+      retestTrialCount: 1,
+    };
+    const started = sessionReducer(undefinedState(), {
+      type: 'start',
+      trainingEye: 'left',
+      config,
+    });
+    if (!started.currentTrial) throw new Error('expected assessment trial');
+
+    const assessmentFeedback = answerCurrentTrial(started);
+    const training = sessionReducer(assessmentFeedback, { type: 'next' });
+    const trainingFeedback = answerCurrentTrial(training);
+    const retest = sessionReducer(trainingFeedback, { type: 'next' });
+    if (!retest.currentTrial || !retest.session?.assessmentThresholdStates) {
+      throw new Error('expected retest trial');
+    }
+
+    const retestStateBefore = retest.session.retestThresholdStates?.find(
+      (state) =>
+        state.taskType === retest.currentTrial?.taskType &&
+        state.spatialFrequency === retest.currentTrial?.spatialFrequency,
+    );
+    const retestFeedback = answerCurrentTrial(retest);
+    const retestStateAfter = retestFeedback.session?.retestThresholdStates?.find(
+      (state) =>
+        state.taskType === retest.currentTrial?.taskType &&
+        state.spatialFrequency === retest.currentTrial?.spatialFrequency,
+    );
+
+    expect(retestStateAfter?.validTrialCount).toBe((retestStateBefore?.validTrialCount ?? 0) + 1);
+    expect(retestFeedback.session?.assessmentThresholdStates).toEqual(
+      retest.session.assessmentThresholdStates,
+    );
+  });
+
   it('starts a single selected task mode', () => {
     const started = sessionReducer(undefinedState(), {
       type: 'start',
@@ -121,6 +162,18 @@ describe('trialGenerator', () => {
 function sequence(values: number[]) {
   let index = 0;
   return () => values[index++ % values.length];
+}
+
+function answerCurrentTrial(state: ReturnType<typeof sessionReducer>) {
+  if (!state.currentTrial) {
+    throw new Error('expected active trial');
+  }
+
+  return sessionReducer(state, {
+    type: 'answer',
+    answer: state.currentTrial.correctAnswer,
+    answeredAt: new Date(new Date(state.currentTrial.createdAt).getTime() + 500),
+  });
 }
 
 function undefinedState() {

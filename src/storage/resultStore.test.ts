@@ -26,7 +26,8 @@ function makeSession(): TrainingSession {
     config: DEFAULT_TRAINING_CONFIG,
     trials: [],
     thresholdStates: initializeThresholdStates(),
-    assessmentThresholdByFrequency: null,
+    assessmentThresholdStates: null,
+    retestThresholdStates: null,
     summary: null,
   };
 }

@@ -1,5 +1,5 @@
 import { mean, roundTo } from './math';
-import type { SessionSummary, TrainingSession } from './types';
+import type { SessionSummary, ThresholdByTaskAndFrequency, ThresholdState, TrainingConfig, TrainingSession } from './types';
 
 export function summarizeSession(session: TrainingSession): SessionSummary {
   const validFormalTrials = session.trials.filter((trial) => trial.isValidTrial);
@@ -13,32 +13,19 @@ export function summarizeSession(session: TrainingSession): SessionSummary {
       1000,
   );
 
-  const frequencyGroups = new Map<number, number[]>();
-  for (const state of session.thresholdStates) {
-    const group = frequencyGroups.get(state.spatialFrequency) ?? [];
-    group.push(state.currentThresholdEstimate);
-    frequencyGroups.set(state.spatialFrequency, group);
-  }
-
-  const thresholdByFrequency: Record<string, number> = {};
-  const sensitivityByFrequency: Record<string, number> = {};
-  for (const [frequency, estimates] of frequencyGroups.entries()) {
-    const threshold = roundTo(mean(estimates), 4);
-    thresholdByFrequency[String(frequency)] = threshold;
-    sensitivityByFrequency[String(frequency)] = roundTo(1 / threshold, 2);
-  }
-  const assessmentThresholdByFrequency = session.assessmentThresholdByFrequency ?? {};
-  const thresholdChangeByFrequency: Record<string, number> = {};
-
-  for (const frequency of Object.keys(thresholdByFrequency)) {
-    const assessmentThreshold = assessmentThresholdByFrequency[frequency];
-    if (assessmentThreshold !== undefined) {
-      thresholdChangeByFrequency[frequency] = roundTo(
-        thresholdByFrequency[frequency] - assessmentThreshold,
-        4,
-      );
-    }
-  }
+  const retestStates = session.retestThresholdStates ?? session.thresholdStates;
+  const assessmentStates = session.assessmentThresholdStates ?? session.thresholdStates;
+  const thresholdByTaskAndFrequency = thresholdsByTaskAndFrequency(retestStates);
+  const assessmentThresholdByTaskAndFrequency = thresholdsByTaskAndFrequency(assessmentStates);
+  const sensitivityByTaskAndFrequency = computeSensitivityByTaskAndFrequency(
+    thresholdByTaskAndFrequency,
+    session.config,
+  );
+  const thresholdChangeByTaskAndFrequency = computeThresholdChangeByTaskAndFrequency(
+    assessmentThresholdByTaskAndFrequency,
+    thresholdByTaskAndFrequency,
+    session.config,
+  );
 
   return {
     totalTrials: session.trials.length,
@@ -49,10 +36,70 @@ export function summarizeSession(session: TrainingSession): SessionSummary {
         ? 0
         : roundTo(correctTrials.length / validFormalTrials.length, 3),
     durationSeconds,
-    thresholdByFrequency,
-    sensitivityByFrequency,
-    assessmentThresholdByFrequency,
-    thresholdChangeByFrequency,
+    thresholdByTaskAndFrequency,
+    sensitivityByTaskAndFrequency,
+    assessmentThresholdByTaskAndFrequency,
+    thresholdChangeByTaskAndFrequency,
     meanReactionTimeMs: Math.round(mean(reactionTimes)),
+  };
+}
+
+export function thresholdsByTaskAndFrequency(
+  states: ThresholdState[],
+): ThresholdByTaskAndFrequency {
+  const result = emptyThresholdByTaskAndFrequency();
+
+  for (const state of states) {
+    result[state.taskType][String(state.spatialFrequency)] = roundTo(
+      state.currentThresholdEstimate,
+      4,
+    );
+  }
+
+  return result;
+}
+
+function computeSensitivityByTaskAndFrequency(
+  thresholds: ThresholdByTaskAndFrequency,
+  config: TrainingConfig,
+): ThresholdByTaskAndFrequency {
+  const result = emptyThresholdByTaskAndFrequency();
+
+  for (const taskType of config.taskTypes) {
+    for (const frequency of Object.keys(thresholds[taskType] ?? {})) {
+      const threshold = thresholds[taskType][frequency];
+      if (threshold !== undefined) {
+        result[taskType][frequency] = roundTo(1 / threshold, 2);
+      }
+    }
+  }
+
+  return result;
+}
+
+function computeThresholdChangeByTaskAndFrequency(
+  assessment: ThresholdByTaskAndFrequency,
+  retest: ThresholdByTaskAndFrequency,
+  config: TrainingConfig,
+): ThresholdByTaskAndFrequency {
+  const result = emptyThresholdByTaskAndFrequency();
+
+  for (const taskType of config.taskTypes) {
+    for (const frequency of Object.keys(retest[taskType] ?? {})) {
+      const assessmentThreshold = assessment[taskType][frequency];
+      const retestThreshold = retest[taskType][frequency];
+      if (assessmentThreshold !== undefined && retestThreshold !== undefined) {
+        result[taskType][frequency] = roundTo(retestThreshold - assessmentThreshold, 4);
+      }
+    }
+  }
+
+  return result;
+}
+
+function emptyThresholdByTaskAndFrequency(): ThresholdByTaskAndFrequency {
+  return {
+    'contrast-detection': {},
+    'orientation-discrimination': {},
   };
 }

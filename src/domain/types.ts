@@ -23,6 +23,8 @@ export type TrialInvalidReason =
   | 'render-failed'
   | 'cancelled';
 
+export type ThresholdByTaskAndFrequency = Record<TaskType, Record<string, number>>;
+
 export interface AdaptiveConfig {
   guessRate: number;
   lapseRate: number;
@@ -92,10 +94,10 @@ export interface SessionSummary {
   invalidTrialCount: number;
   accuracy: number;
   durationSeconds: number;
-  thresholdByFrequency: Record<string, number>;
-  sensitivityByFrequency: Record<string, number>;
-  assessmentThresholdByFrequency: Record<string, number>;
-  thresholdChangeByFrequency: Record<string, number>;
+  thresholdByTaskAndFrequency: ThresholdByTaskAndFrequency;
+  sensitivityByTaskAndFrequency: ThresholdByTaskAndFrequency;
+  assessmentThresholdByTaskAndFrequency: ThresholdByTaskAndFrequency;
+  thresholdChangeByTaskAndFrequency: ThresholdByTaskAndFrequency;
   meanReactionTimeMs: number;
 }
 
@@ -107,7 +109,8 @@ export interface TrainingSession {
   config: TrainingConfig;
   trials: Trial[];
   thresholdStates: ThresholdState[];
-  assessmentThresholdByFrequency: Record<string, number> | null;
+  assessmentThresholdStates: ThresholdState[] | null;
+  retestThresholdStates: ThresholdState[] | null;
   summary: SessionSummary | null;
 }
 

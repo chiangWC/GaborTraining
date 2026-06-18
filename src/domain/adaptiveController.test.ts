@@ -3,6 +3,7 @@ import {
   initializeThresholdState,
   nextContrastForState,
   normalizeDistribution,
+  psychometricCorrectProbability,
   updateThresholdState,
 } from './adaptiveController';
 import { DEFAULT_TRAINING_CONFIG } from './config';
@@ -38,6 +39,34 @@ describe('adaptiveController', () => {
 
     expect(contrast).toBe(DEFAULT_TRAINING_CONFIG.maxContrast);
   });
+
+  it('uses log contrast ratios in the psychometric function', () => {
+    const lowPair = psychometricCorrectProbability(0.1, 0.05);
+    const highPair = psychometricCorrectProbability(0.4, 0.2);
+
+    expect(lowPair).toBeCloseTo(highPair);
+  });
+
+  it('converges near a simulated user threshold', () => {
+    const trueThreshold = 0.12;
+    const rng = seededRandom(42);
+    let state = initializeThresholdState('contrast-detection', 4);
+
+    for (let index = 0; index < 120; index += 1) {
+      const contrast = nextContrastForState(state);
+      const pCorrect = psychometricCorrectProbability(contrast, trueThreshold);
+      const trial = makeTrial({
+        trialIndex: index + 1,
+        contrast,
+        isCorrect: rng() < pCorrect,
+        answeredAt: new Date(400 + index).toISOString(),
+      });
+      state = updateThresholdState(state, trial);
+    }
+
+    expect(state.currentThresholdEstimate).toBeGreaterThan(0.08);
+    expect(state.currentThresholdEstimate).toBeLessThan(0.17);
+  });
 });
 
 function makeTrial(overrides: Partial<Trial>): Trial {
@@ -63,5 +92,13 @@ function makeTrial(overrides: Partial<Trial>): Trial {
     createdAt: new Date(0).toISOString(),
     answeredAt: new Date(400).toISOString(),
     ...overrides,
+  };
+}
+
+function seededRandom(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state * 1664525 + 1013904223) % 2 ** 32;
+    return state / 2 ** 32;
   };
 }

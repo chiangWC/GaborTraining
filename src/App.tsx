@@ -399,7 +399,16 @@ function InlineFeedback({
 function ResultScreen({ session, onReset }: { session: TrainingSession; onReset: () => void }) {
   const summary = session.summary;
   if (!summary) return null;
-  const frequencies = session.config.spatialFrequencies;
+  const resultRows = session.config.taskTypes.flatMap((taskType) =>
+    session.config.spatialFrequencies.map((frequency) => ({
+      taskType,
+      frequency,
+      label:
+        session.config.taskTypes.length === 1
+          ? `${frequency} cpd`
+          : `${taskTypeLabel[taskType]} ${frequency} cpd`,
+    })),
+  );
 
   return (
     <section className="result-layout">
@@ -427,34 +436,34 @@ function ResultScreen({ session, onReset }: { session: TrainingSession; onReset:
         <div>
           <h3>Retest threshold</h3>
           <div className="frequency-table">
-            {frequencies.map((frequency) => (
-              <div className="frequency-row" key={frequency}>
-                <span>{frequency} cpd</span>
-                <div className="bar-track threshold">
-                  <div
-                    style={{
-                      width: `${Math.max(
-                        4,
-                        (summary.thresholdByFrequency[String(frequency)] ?? 0) * 100,
-                      )}%`,
-                    }}
-                  />
+            {resultRows.map(({ taskType, frequency, label }) => {
+              const threshold = summary.thresholdByTaskAndFrequency[taskType]?.[String(frequency)] ?? 0;
+              return (
+                <div className="frequency-row" key={`${taskType}:${frequency}`}>
+                  <span>{label}</span>
+                  <div className="bar-track threshold">
+                    <div
+                      style={{
+                        width: `${Math.max(4, threshold * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <strong>{roundTo(threshold, 3)}</strong>
                 </div>
-                <strong>{roundTo(summary.thresholdByFrequency[String(frequency)] ?? 0, 3)}</strong>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         <div>
           <h3>Short-term threshold change</h3>
           <div className="frequency-table">
-            {frequencies.map((frequency) => {
-              const change = summary.thresholdChangeByFrequency[String(frequency)] ?? 0;
+            {resultRows.map(({ taskType, frequency, label }) => {
+              const change = summary.thresholdChangeByTaskAndFrequency[taskType]?.[String(frequency)] ?? 0;
               const magnitude = Math.min(Math.abs(change) * 400, 100);
               return (
-                <div className="frequency-row" key={frequency}>
-                  <span>{frequency} cpd</span>
+                <div className="frequency-row" key={`${taskType}:${frequency}`}>
+                  <span>{label}</span>
                   <div className={change <= 0 ? 'bar-track sensitivity' : 'bar-track threshold'}>
                     <div style={{ width: `${Math.max(4, magnitude)}%` }} />
                   </div>

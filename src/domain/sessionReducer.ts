@@ -1,4 +1,5 @@
 import {
+  cloneThresholdStates,
   recordInvalidThresholdExposure,
   replaceThresholdState,
   updateThresholdState,
@@ -12,6 +13,7 @@ import {
   generateTrial,
   isTrainingPurpose,
   scoreTrial,
+  thresholdStatesForPurpose,
   timeoutTrial,
 } from './trialGenerator';
 import type {
@@ -100,26 +102,37 @@ export function sessionReducer(
 }
 
 function applyAnsweredTrial(session: TrainingSession, trial: Trial): TrainingSession {
-  const thresholdStates =
-    trial.purpose === 'assessment' || trial.purpose === 'retest'
-      ? updateStatesForAssessmentTrial(session, trial)
-      : session.thresholdStates;
+  if (trial.purpose === 'assessment') {
+    return {
+      ...session,
+      trials: [...session.trials, trial],
+      thresholdStates: updateStatesForAssessmentTrial(session, trial),
+    };
+  }
+
+  if (trial.purpose === 'retest') {
+    return {
+      ...session,
+      trials: [...session.trials, trial],
+      retestThresholdStates: updateStatesForAssessmentTrial(session, trial),
+    };
+  }
 
   return {
     ...session,
     trials: [...session.trials, trial],
-    thresholdStates,
   };
 }
 
 function updateStatesForAssessmentTrial(session: TrainingSession, trial: Trial) {
-  const state = findThresholdStateForTrial(session.thresholdStates, trial);
+  const sourceStates = thresholdStatesForPurpose(session, trial.purpose);
+  const state = findThresholdStateForTrial(sourceStates, trial);
   const updatedState =
     trial.isValidTrial && trial.isCorrect !== null
       ? updateThresholdState(state, trial, session.config)
       : recordInvalidThresholdExposure(state, trial);
 
-  return replaceThresholdState(session.thresholdStates, updatedState);
+  return replaceThresholdState(sourceStates, updatedState);
 }
 
 function advanceSession(session: TrainingSession): SessionMachine {
@@ -137,10 +150,11 @@ function advanceSession(session: TrainingSession): SessionMachine {
   }
 
   const sessionWithAssessmentSnapshot =
-    session.assessmentThresholdByFrequency === null
+    session.assessmentThresholdStates === null
       ? {
           ...session,
-          assessmentThresholdByFrequency: thresholdByFrequency(session),
+          assessmentThresholdStates: cloneThresholdStates(session.thresholdStates),
+          retestThresholdStates: cloneThresholdStates(session.thresholdStates),
         }
       : session;
 
@@ -178,16 +192,4 @@ function advanceSession(session: TrainingSession): SessionMachine {
     currentTrial: null,
     feedback: null,
   };
-}
-
-function thresholdByFrequency(session: TrainingSession): Record<string, number> {
-  const thresholds: Record<string, number> = {};
-  for (const frequency of session.config.spatialFrequencies) {
-    const states = session.thresholdStates.filter((state) => state.spatialFrequency === frequency);
-    if (states.length > 0) {
-      thresholds[String(frequency)] =
-        states.reduce((total, state) => total + state.currentThresholdEstimate, 0) / states.length;
-    }
-  }
-  return thresholds;
 }

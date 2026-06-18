@@ -63,7 +63,10 @@ export function psychometricCorrectProbability(
   config: TrainingConfig = DEFAULT_TRAINING_CONFIG,
 ): number {
   const { guessRate, lapseRate, slope } = config.adaptive;
-  const sigmoid = 1 / (1 + Math.exp(-(contrast - threshold) / slope));
+  const safeContrast = Math.max(contrast, config.minContrast);
+  const safeThreshold = Math.max(threshold, config.minContrast);
+  const x = (Math.log(safeContrast) - Math.log(safeThreshold)) / slope;
+  const sigmoid = 1 / (1 + Math.exp(-x));
   return guessRate + (1 - guessRate - lapseRate) * sigmoid;
 }
 
@@ -182,4 +185,13 @@ export function replaceThresholdState(
       ? replacement
       : state,
   );
+}
+
+export function cloneThresholdStates(states: ThresholdState[]): ThresholdState[] {
+  return states.map((state) => ({
+    ...state,
+    thresholdGrid: [...state.thresholdGrid],
+    posteriorDistribution: [...state.posteriorDistribution],
+    recentResponses: [...state.recentResponses],
+  }));
 }

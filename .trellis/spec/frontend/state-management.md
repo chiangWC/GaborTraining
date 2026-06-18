@@ -51,7 +51,7 @@ interface ResultStore {
 
 - Storage key: `gabor-training.sessions.v1`.
 - Stored payload: `{ version: 1, sessions: TrainingSession[] }`.
-- `TrainingSession` must include `sessionId`, `trainingEye`, `startedAt`, `endedAt`, `config`, `trials`, `thresholdStates`, `assessmentThresholdByFrequency`, and `summary`.
+- `TrainingSession` must include `sessionId`, `trainingEye`, `startedAt`, `endedAt`, `config`, `trials`, `thresholdStates`, `assessmentThresholdStates`, `retestThresholdStates`, and `summary`.
 - Dates are serialized as ISO strings.
 
 ### 4. Validation & Error Matrix
@@ -96,5 +96,5 @@ store.save(completedTrainingSession);
 - Do not store only summary data. Full trial data and threshold states are required for later trend/debug views.
 - Do not update threshold state from React components. Submit an answer action and let `sessionReducer` call the domain update functions.
 - Keep `feedback` as a short state-machine phase, but render it with the same training screen so the stimulus context remains visible.
-- Session phases are `assessment -> training -> retest`. Assessment and retest update ZEST posterior; training freezes the assessment thresholds and records performance only.
+- Session phases are `assessment -> training -> retest`. Assessment and retest update separate ZEST posterior states; training freezes the assessment thresholds and records performance only.
 - Use `TrialPurpose` to distinguish assessment, training-easy, training-core, training-challenge, and retest trials.
