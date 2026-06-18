@@ -40,6 +40,7 @@ export interface TrainingConfig {
   trainingTrialCount: number;
   retestTrialCount: number;
   viewingDistanceCm: number;
+  screenPpi: number;
   patchSizeDegree: number;
   orientationAngleDegree: number;
   minContrast: number;

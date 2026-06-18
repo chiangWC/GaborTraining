@@ -12,6 +12,7 @@ import {
   findThresholdStateForTrial,
   generateTrial,
   isTrainingPurpose,
+  renderFailedTrial,
   scoreTrial,
   thresholdStatesForPurpose,
   timeoutTrial,
@@ -29,6 +30,7 @@ export type SessionAction =
   | { type: 'start'; trainingEye: TrainingEye; config?: TrainingConfig }
   | { type: 'answer'; answer: TrialAnswer; answeredAt?: Date }
   | { type: 'timeout' }
+  | { type: 'renderFailed'; trialId: string }
   | { type: 'next' }
   | { type: 'reset' };
 
@@ -85,6 +87,26 @@ export function sessionReducer(
         session,
         currentTrial: answeredTrial,
         feedback: { correct: false, message: 'Timed out' },
+      };
+    }
+
+    case 'renderFailed': {
+      if (
+        !state.session ||
+        !state.currentTrial ||
+        state.currentTrial.trialId !== action.trialId ||
+        state.currentTrial.answeredAt !== null
+      ) {
+        return state;
+      }
+      const answeredTrial = renderFailedTrial(state.currentTrial);
+      const session = applyAnsweredTrial(state.session, answeredTrial);
+
+      return {
+        phase: 'feedback',
+        session,
+        currentTrial: answeredTrial,
+        feedback: { correct: false, message: 'Render failed' },
       };
     }
 

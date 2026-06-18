@@ -23,6 +23,7 @@ The app is a training and trend-observation tool only. It must not present medic
 ## Requirements
 
 - Provide an Eye Training first screen with safety/training instructions and a training-eye selector for left or right eye.
+- Provide a simple display calibration control before training: match an on-screen reference bar to a bank card or ruler, enter viewing distance, and store the derived screen PPI in `TrainingConfig`.
 - Include a quick assessment phase that estimates current thresholds for each spatial frequency.
 - Include a threshold-focused training phase that freezes assessment thresholds and samples contrast around those thresholds.
 - Include a short retest phase that updates a separate posterior to estimate short-term threshold change against the frozen assessment baseline.
@@ -47,6 +48,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - Select spatial frequency with weighted sampling based on uncertainty, difficulty/recent accuracy, and coverage.
 - Generate each trial with frozen parameters: `trialId`, `sessionId`, `trialIndex`, `isPracticeTrial`, `taskType`, `trainingEye`, `spatialFrequency`, `contrast`, `phase`, `orientation`, `targetPosition`, `correctAnswer`, and timestamps.
 - Mark trials invalid when response time is below `150ms`, when answer times out, when render fails, or when the user exits mid-trial.
+- If Canvas rendering fails, the stimulus component must dispatch a render-failed event so the reducer saves the trial with `invalidReason = "render-failed"`.
 - Save complete session, trial, threshold state, and summary data locally in the browser.
 - Show a result page with training eye, total trials, valid trials, invalid trials, accuracy, duration, mean reaction time, retest threshold by task type and spatial frequency, contrast sensitivity by task type and spatial frequency, and retest-minus-assessment threshold change.
 - Make the result explanation emphasize trend observation and threshold/sensitivity interpretation, not medical conclusions.
@@ -55,6 +57,7 @@ The app is a training and trend-observation tool only. It must not present medic
 
 - [ ] User can select left or right training eye and start training.
 - [ ] App displays the required safety instructions before training.
+- [ ] User can calibrate screen PPI with a physical reference and set viewing distance before training.
 - [ ] Assessment, threshold-focused training, and retest phases all run.
 - [ ] Formal training supports five spatial frequencies: `1`, `2`, `4`, `8`, and `12` cpd.
 - [ ] User can choose Contrast Detection or Orientation Discrimination as separate session modes.
@@ -67,6 +70,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - [ ] Training contrast allocation follows the 20% easy / 60% threshold-near / 20% challenge split.
 - [ ] Trial parameters remain stable across React re-renders.
 - [ ] Invalid trials are saved but do not update threshold estimates.
+- [ ] Canvas render failures are saved as invalid trials with `render-failed`.
 - [ ] Results include threshold and sensitivity by task type and spatial frequency, not only accuracy.
 - [ ] Completed sessions are stored locally and can be read back by the app.
 - [ ] Algorithm/generator modules have unit coverage for posterior update, simulated ZEST convergence, trial freezing, answer scoring, and invalid-trial exclusion.
@@ -91,7 +95,7 @@ Proposed modules:
 - `src/domain/trialGenerator.ts`: freezes task type, frequency, contrast, phase, target, orientation, and correct answer once per trial.
 - `src/domain/sessionReducer.ts`: ready/assessment/training/retest/feedback/complete state machine and response handling.
 - `src/vision/gaborRenderer.ts`: Canvas-based Gabor image generation from explicit parameters only.
-- `src/vision/displayCalibrator.ts`: cpd-to-cycles-per-pixel and patch sizing with Web fallbacks.
+- `src/vision/displayCalibrator.ts`: cpd-to-cycles-per-pixel, physical reference PPI calculation, and patch sizing with Web fallbacks.
 - `src/storage/resultStore.ts`: local browser persistence behind a storage adapter.
 - `src/components/*`: screens for setup, assessment/training/retest trial presentation, inline feedback, and results.
 
@@ -101,7 +105,7 @@ Proposed modules:
 
 **Decision**: Scaffold a lightweight Vite React TypeScript app and port the relevant Gabor concepts into browser-friendly TypeScript modules. Use simplified ZEST instead of Blink's staircase. Use `localStorage` for MVP persistence behind a small storage adapter.
 
-**Consequences**: This gives a fast MVP with testable domain logic. Display calibration will be approximate in a browser because physical screen dimensions are not reliably available; the implementation should expose defaults and keep calibration logic isolated for later refinement.
+**Consequences**: This gives a fast MVP with testable domain logic. Display calibration uses a user-matched physical reference and viewing distance, but it remains approximate because browser CSS pixels and consumer display luminance are not clinical-grade measurements.
 
 ## Out of Scope
 

@@ -1,4 +1,4 @@
-import { Activity, ArrowLeft, ArrowRight, Eye, RotateCcw, ShieldAlert } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowRight, Eye, RotateCcw, Ruler, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { DEFAULT_TRAINING_CONFIG, taskTypeLabel } from './domain/config';
 import { roundTo } from './domain/math';
@@ -16,14 +16,35 @@ import type {
 } from './domain/types';
 import { LocalStorageResultStore } from './storage/resultStore';
 import { GaborStimulus } from './components/GaborStimulus';
+import { calculateScreenPpi } from './vision/displayCalibrator';
 
 const store = new LocalStorageResultStore();
+const calibrationReferences = {
+  'bank-card': { label: 'Bank card', widthCm: 8.56 },
+  'ten-cm-ruler': { label: '10 cm ruler', widthCm: 10 },
+} as const;
+type CalibrationReference = keyof typeof calibrationReferences;
 
 export function App() {
   const [machine, dispatch] = useReducer(sessionReducer, initialSessionMachine);
   const [trainingEye, setTrainingEye] = useState<TrainingEye>('left');
   const [taskType, setTaskType] = useState<TaskType>('contrast-detection');
+  const [calibrationReference, setCalibrationReference] =
+    useState<CalibrationReference>('bank-card');
+  const [referenceCssPixels, setReferenceCssPixels] = useState(340);
+  const [viewingDistanceCm, setViewingDistanceCm] = useState(
+    DEFAULT_TRAINING_CONFIG.viewingDistanceCm,
+  );
   const [savedSessions, setSavedSessions] = useState<TrainingSession[]>(() => store.loadAll());
+  const screenPpi = useMemo(
+    () =>
+      calculateScreenPpi({
+        referenceCssPixels,
+        referenceWidthCm: calibrationReferences[calibrationReference].widthCm,
+        devicePixelRatio: getDevicePixelRatio(),
+      }),
+    [calibrationReference, referenceCssPixels],
+  );
 
   useEffect(() => {
     if (machine.phase !== 'feedback') return;
@@ -87,6 +108,8 @@ export function App() {
       config: {
         ...DEFAULT_TRAINING_CONFIG,
         taskTypes: [taskType],
+        viewingDistanceCm,
+        screenPpi,
       },
     });
   };
@@ -119,6 +142,13 @@ export function App() {
           setTrainingEye={setTrainingEye}
           taskType={taskType}
           setTaskType={setTaskType}
+          calibrationReference={calibrationReference}
+          setCalibrationReference={setCalibrationReference}
+          referenceCssPixels={referenceCssPixels}
+          setReferenceCssPixels={setReferenceCssPixels}
+          viewingDistanceCm={viewingDistanceCm}
+          setViewingDistanceCm={setViewingDistanceCm}
+          screenPpi={screenPpi}
           onStart={start}
           savedSessions={savedSessions}
         />
@@ -135,6 +165,7 @@ export function App() {
             session={machine.session}
             progress={progress}
             onAnswer={(answer) => dispatch({ type: 'answer', answer })}
+            onRenderFailed={(trialId) => dispatch({ type: 'renderFailed', trialId })}
             onReset={reset}
             isFeedback={machine.phase === 'feedback'}
             feedback={machine.feedback}
@@ -153,6 +184,13 @@ interface SetupScreenProps {
   setTrainingEye: (eye: TrainingEye) => void;
   taskType: TaskType;
   setTaskType: (taskType: TaskType) => void;
+  calibrationReference: CalibrationReference;
+  setCalibrationReference: (reference: CalibrationReference) => void;
+  referenceCssPixels: number;
+  setReferenceCssPixels: (pixels: number) => void;
+  viewingDistanceCm: number;
+  setViewingDistanceCm: (distanceCm: number) => void;
+  screenPpi: number;
   onStart: () => void;
   savedSessions: TrainingSession[];
 }
@@ -162,6 +200,13 @@ function SetupScreen({
   setTrainingEye,
   taskType,
   setTaskType,
+  calibrationReference,
+  setCalibrationReference,
+  referenceCssPixels,
+  setReferenceCssPixels,
+  viewingDistanceCm,
+  setViewingDistanceCm,
+  screenPpi,
   onStart,
   savedSessions,
 }: SetupScreenProps) {
@@ -233,6 +278,16 @@ function SetupScreen({
           </button>
         </div>
 
+        <DisplayCalibrationPanel
+          calibrationReference={calibrationReference}
+          setCalibrationReference={setCalibrationReference}
+          referenceCssPixels={referenceCssPixels}
+          setReferenceCssPixels={setReferenceCssPixels}
+          viewingDistanceCm={viewingDistanceCm}
+          setViewingDistanceCm={setViewingDistanceCm}
+          screenPpi={screenPpi}
+        />
+
         <button type="button" className="primary-action" onClick={onStart}>
           Start Training
           <ArrowRight size={18} />
@@ -246,6 +301,8 @@ function SetupScreen({
         <Metric label="Retest" value={`${DEFAULT_TRAINING_CONFIG.retestTrialCount} trials`} />
         <Metric label="Frequencies" value="1, 2, 4, 8, 12 cpd" />
         <Metric label="Task" value={taskTypeLabel[taskType]} />
+        <Metric label="Screen PPI" value={Math.round(screenPpi)} />
+        <Metric label="Viewing distance" value={`${viewingDistanceCm} cm`} />
         {latestSession?.summary && (
           <div className="last-session">
             <p className="eyebrow">Last saved session</p>
@@ -258,11 +315,107 @@ function SetupScreen({
   );
 }
 
+interface DisplayCalibrationPanelProps {
+  calibrationReference: CalibrationReference;
+  setCalibrationReference: (reference: CalibrationReference) => void;
+  referenceCssPixels: number;
+  setReferenceCssPixels: (pixels: number) => void;
+  viewingDistanceCm: number;
+  setViewingDistanceCm: (distanceCm: number) => void;
+  screenPpi: number;
+}
+
+function DisplayCalibrationPanel({
+  calibrationReference,
+  setCalibrationReference,
+  referenceCssPixels,
+  setReferenceCssPixels,
+  viewingDistanceCm,
+  setViewingDistanceCm,
+  screenPpi,
+}: DisplayCalibrationPanelProps) {
+  const reference = calibrationReferences[calibrationReference];
+  const setClampedReferenceCssPixels = (pixels: number) => {
+    setReferenceCssPixels(Math.min(Math.max(Math.round(pixels), 120), 620));
+  };
+  const setClampedViewingDistance = (distanceCm: number) => {
+    setViewingDistanceCm(Math.min(Math.max(Math.round(distanceCm), 30), 120));
+  };
+
+  return (
+    <div className="calibration-panel">
+      <div className="calibration-title">
+        <Ruler size={18} />
+        <div>
+          <h3>Display calibration</h3>
+          <p>Match the reference bar to {reference.label.toLowerCase()} width.</p>
+        </div>
+      </div>
+
+      <div className="calibration-reference-selector" aria-label="Calibration reference">
+        {Object.entries(calibrationReferences).map(([key, item]) => (
+          <button
+            key={key}
+            type="button"
+            className={calibrationReference === key ? 'segmented active' : 'segmented'}
+            onClick={() => setCalibrationReference(key as CalibrationReference)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="calibration-scale" aria-label="Physical reference width">
+        <div style={{ width: `${referenceCssPixels}px` }} />
+      </div>
+
+      <div className="calibration-controls">
+        <label>
+          Reference bar
+          <input
+            type="range"
+            min="120"
+            max="620"
+            value={referenceCssPixels}
+            onChange={(event) => setClampedReferenceCssPixels(Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Width px
+          <input
+            type="number"
+            min="120"
+            max="620"
+            value={referenceCssPixels}
+            onChange={(event) => setClampedReferenceCssPixels(Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Distance cm
+          <input
+            type="number"
+            min="30"
+            max="120"
+            value={viewingDistanceCm}
+            onChange={(event) => setClampedViewingDistance(Number(event.target.value))}
+          />
+        </label>
+      </div>
+
+      <div className="calibration-metrics">
+        <Metric label="Reference" value={`${reference.widthCm} cm`} />
+        <Metric label="Estimated PPI" value={Math.round(screenPpi)} />
+      </div>
+    </div>
+  );
+}
+
 interface TrainingScreenProps {
   trial: Trial;
   session: TrainingSession;
   progress: { completed: number; total: number; label: string };
   onAnswer: (answer: TrialAnswer) => void;
+  onRenderFailed: (trialId: string) => void;
   onReset: () => void;
   isFeedback: boolean;
   feedback: { correct: boolean | null; message: string } | null;
@@ -273,6 +426,7 @@ function TrainingScreen({
   session,
   progress,
   onAnswer,
+  onRenderFailed,
   onReset,
   isFeedback,
   feedback,
@@ -326,7 +480,7 @@ function TrainingScreen({
         <Metric label="Trial" value={`${displayedTrialNumber}/${progress.total}`} />
       </div>
 
-      <GaborStimulus trial={trial} config={session.config} />
+      <GaborStimulus trial={trial} config={session.config} onRenderFailed={onRenderFailed} />
 
       {isFeedback && feedback && <InlineFeedback feedback={feedback} trial={trial} />}
       <p className="keyboard-hint">Use ← / → keys or the buttons below to answer.</p>
@@ -496,6 +650,11 @@ function isTrainingPurpose(purpose: TrialPurpose): boolean {
     purpose === 'training-core' ||
     purpose === 'training-challenge'
   );
+}
+
+function getDevicePixelRatio(): number {
+  if (typeof window === 'undefined') return 1;
+  return Math.max(window.devicePixelRatio || 1, 1);
 }
 
 function Metric({ label, value }: { label: string; value: string | number }) {

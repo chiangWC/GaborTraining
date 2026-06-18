@@ -23,6 +23,10 @@ button {
   font: inherit;
 }
 
+input {
+  font: inherit;
+}
+
 .app-shell {
   min-height: 100vh;
   padding: 24px;
@@ -238,6 +242,101 @@ h3 {
   background: #ecfdf5;
   border-color: #0f766e;
   box-shadow: 0 0 0 2px rgb(15 118 110 / 0.12);
+}
+
+.calibration-panel {
+  background: #f8faf9;
+  border: 1px solid #dce5e1;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  padding: 16px;
+}
+
+.calibration-title {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.calibration-title h3 {
+  margin-bottom: 4px;
+}
+
+.calibration-title p {
+  color: #53625f;
+  line-height: 1.45;
+  margin-bottom: 0;
+}
+
+.calibration-reference-selector {
+  background: #eef4f2;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 14px;
+  padding: 4px;
+}
+
+.calibration-scale {
+  background: #ffffff;
+  border: 1px solid #dce5e1;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding: 16px;
+}
+
+.calibration-scale > div {
+  background: repeating-linear-gradient(
+    90deg,
+    #0f766e 0,
+    #0f766e 1px,
+    #94a3b8 1px,
+    #94a3b8 2px,
+    #0f766e 2px,
+    #0f766e 24px
+  );
+  border-radius: 4px;
+  height: 36px;
+  min-width: 120px;
+}
+
+.calibration-controls {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 110px 120px;
+}
+
+.calibration-controls label {
+  color: #53625f;
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 700;
+  gap: 7px;
+}
+
+.calibration-controls input[type='number'] {
+  border: 1px solid #cfd9d5;
+  border-radius: 8px;
+  color: #17211f;
+  min-height: 42px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.calibration-controls input[type='range'] {
+  accent-color: #0f766e;
+  min-height: 42px;
+  width: 100%;
+}
+
+.calibration-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 4px;
 }
 
 .primary-action,
@@ -593,6 +692,7 @@ h3 {
 
   .instruction-grid,
   .task-selector,
+  .calibration-controls,
   .trial-meta,
   .summary-grid {
     grid-template-columns: 1fr;
@@ -604,6 +704,10 @@ h3 {
   }
 
   .answer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .calibration-metrics {
     grid-template-columns: 1fr;
   }
 }

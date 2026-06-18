@@ -39,6 +39,8 @@ Add or update unit tests for:
 - Training contrast allocation around threshold: easy/core/challenge.
 - Trial generation and frozen random parameters.
 - Trial scoring and invalid-trial exclusion.
+- Render-failed trials are persisted as invalid and do not update valid posterior counts.
+- Display calibration converts a physical reference measurement into screen PPI and uses that PPI for pixels-per-degree.
 - Storage adapters and payload round trips.
 - Browser API fallbacks that affect startup or trial creation.
 

@@ -1,5 +1,7 @@
 import type { TrainingConfig } from './types';
 
+export const DEFAULT_SCREEN_PPI = 110;
+
 export const DEFAULT_TRAINING_CONFIG: TrainingConfig = {
   taskTypes: ['contrast-detection', 'orientation-discrimination'],
   spatialFrequencies: [1, 2, 4, 8, 12],
@@ -7,6 +9,7 @@ export const DEFAULT_TRAINING_CONFIG: TrainingConfig = {
   trainingTrialCount: 60,
   retestTrialCount: 20,
   viewingDistanceCm: 57,
+  screenPpi: DEFAULT_SCREEN_PPI,
   patchSizeDegree: 4,
   orientationAngleDegree: 15,
   minContrast: 0.01,

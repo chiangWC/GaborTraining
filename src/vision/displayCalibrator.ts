@@ -1,7 +1,9 @@
 import type { TrainingConfig } from '../domain/types';
+import { DEFAULT_SCREEN_PPI } from '../domain/config';
 
 export interface DisplayCalibration {
   viewingDistanceCm: number;
+  screenPpi: number;
   pixelsPerDegree: number;
   pointsPerDegree: number;
   patchCssPixels: number;
@@ -10,12 +12,16 @@ export interface DisplayCalibration {
   cyclesPerPixel: (spatialFrequencyCpd: number) => number;
 }
 
-const DEFAULT_PPI = 110;
+export interface ScreenPpiCalibrationInput {
+  referenceCssPixels: number;
+  referenceWidthCm: number;
+  devicePixelRatio?: number;
+}
 
 export function createDisplayCalibration(config: TrainingConfig): DisplayCalibration {
   const devicePixelRatio =
     typeof window === 'undefined' ? 1 : Math.max(window.devicePixelRatio || 1, 1);
-  const pixelsPerCm = DEFAULT_PPI / 2.54;
+  const pixelsPerCm = config.screenPpi / 2.54;
   const cmPerDegree = 2 * config.viewingDistanceCm * Math.tan(Math.PI / 360);
   const pixelsPerDegree = pixelsPerCm * cmPerDegree;
   const pointsPerDegree = pixelsPerDegree / devicePixelRatio;
@@ -25,6 +31,7 @@ export function createDisplayCalibration(config: TrainingConfig): DisplayCalibra
 
   return {
     viewingDistanceCm: config.viewingDistanceCm,
+    screenPpi: config.screenPpi,
     pixelsPerDegree,
     pointsPerDegree,
     patchCssPixels,
@@ -34,3 +41,15 @@ export function createDisplayCalibration(config: TrainingConfig): DisplayCalibra
   };
 }
 
+export function calculateScreenPpi({
+  referenceCssPixels,
+  referenceWidthCm,
+  devicePixelRatio = 1,
+}: ScreenPpiCalibrationInput): number {
+  if (referenceCssPixels <= 0 || referenceWidthCm <= 0 || devicePixelRatio <= 0) {
+    return DEFAULT_SCREEN_PPI;
+  }
+
+  const cssPixelsPerCm = referenceCssPixels / referenceWidthCm;
+  return cssPixelsPerCm * devicePixelRatio * 2.54;
+}

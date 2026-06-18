@@ -52,6 +52,36 @@ describe('trialGenerator', () => {
     expect(answered.phase).toBe('feedback');
   });
 
+  it('records render failures as invalid trials without valid posterior updates', () => {
+    const started = sessionReducer(undefinedState(), { type: 'start', trainingEye: 'left' });
+    if (!started.currentTrial || !started.session) {
+      throw new Error('expected active trial');
+    }
+    const initialState = started.session.thresholdStates.find(
+      (state) =>
+        state.taskType === started.currentTrial?.taskType &&
+        state.spatialFrequency === started.currentTrial?.spatialFrequency,
+    );
+    if (!initialState) throw new Error('expected threshold state');
+
+    const failed = sessionReducer(started, {
+      type: 'renderFailed',
+      trialId: started.currentTrial.trialId,
+    });
+    const updatedState = failed.session?.thresholdStates.find(
+      (state) =>
+        state.taskType === started.currentTrial?.taskType &&
+        state.spatialFrequency === started.currentTrial?.spatialFrequency,
+    );
+
+    expect(failed.phase).toBe('feedback');
+    expect(failed.feedback?.message).toBe('Render failed');
+    expect(failed.currentTrial?.invalidReason).toBe('render-failed');
+    expect(failed.currentTrial?.isValidTrial).toBe(false);
+    expect(updatedState?.trialCount).toBe(initialState.trialCount + 1);
+    expect(updatedState?.validTrialCount).toBe(initialState.validTrialCount);
+  });
+
   it('does not update threshold state during threshold-focused training', () => {
     const config = {
       ...DEFAULT_TRAINING_CONFIG,

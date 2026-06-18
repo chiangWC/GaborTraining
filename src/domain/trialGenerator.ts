@@ -116,6 +116,18 @@ export function timeoutTrial(trial: Trial): Trial {
   };
 }
 
+export function renderFailedTrial(trial: Trial): Trial {
+  return {
+    ...trial,
+    userAnswer: null,
+    isCorrect: false,
+    reactionTimeMs: null,
+    isValidTrial: false,
+    invalidReason: 'render-failed',
+    answeredAt: new Date().toISOString(),
+  };
+}
+
 export function cancelledTrial(trial: Trial): Trial {
   return {
     ...trial,

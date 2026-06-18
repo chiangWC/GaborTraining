@@ -23,7 +23,15 @@ React components should be thin views over domain state. They can render screens
 Props should reference domain types rather than recreating local shape aliases.
 
 ```typescript
-function GaborStimulus({ trial, config }: { trial: Trial; config: TrainingConfig }) {
+function GaborStimulus({
+  trial,
+  config,
+  onRenderFailed,
+}: {
+  trial: Trial;
+  config: TrainingConfig;
+  onRenderFailed: (trialId: string) => void;
+}) {
   // render frozen trial parameters
 }
 ```
