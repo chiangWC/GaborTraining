@@ -27,6 +27,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - Include a quick assessment phase that estimates current thresholds for each spatial frequency.
 - Include a threshold-focused training phase that freezes assessment thresholds and samples contrast around those thresholds.
 - Include a short retest phase that updates a separate posterior to estimate short-term threshold change against the frozen assessment baseline.
+- Default session length is `50` assessment trials, `80` threshold-focused training trials, and `50` retest trials.
 - Training contrast allocation:
   - 20% easy trials: `threshold * 1.3` to `threshold * 1.6`.
   - 60% core trials: `threshold * 0.9` to `threshold * 1.2`.
@@ -51,6 +52,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - If Canvas rendering fails, the stimulus component must dispatch a render-failed event so the reducer saves the trial with `invalidReason = "render-failed"`.
 - Save complete session, trial, threshold state, and summary data locally in the browser.
 - Show a result page with training eye, total trials, valid trials, invalid trials, accuracy, duration, mean reaction time, retest threshold by task type and spatial frequency, contrast sensitivity by task type and spatial frequency, and retest-minus-assessment threshold change.
+- Result copy must state that training trials are reinforcement trials around the assessment threshold and do not contribute to final threshold estimation; the reported change comes from assessment versus retest.
 - Make the result explanation emphasize trend observation and threshold/sensitivity interpretation, not medical conclusions.
 
 ## Acceptance Criteria
@@ -59,6 +61,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - [ ] App displays the required safety instructions before training.
 - [ ] User can calibrate screen PPI with a physical reference and set viewing distance before training.
 - [ ] Assessment, threshold-focused training, and retest phases all run.
+- [ ] Default trial counts are 50 assessment, 80 training, and 50 retest trials.
 - [ ] Formal training supports five spatial frequencies: `1`, `2`, `4`, `8`, and `12` cpd.
 - [ ] User can choose Contrast Detection or Orientation Discrimination as separate session modes.
 - [ ] Both task modes work as two-choice tasks.
@@ -73,7 +76,7 @@ The app is a training and trend-observation tool only. It must not present medic
 - [ ] Canvas render failures are saved as invalid trials with `render-failed`.
 - [ ] Results include threshold and sensitivity by task type and spatial frequency, not only accuracy.
 - [ ] Completed sessions are stored locally and can be read back by the app.
-- [ ] Algorithm/generator modules have unit coverage for posterior update, simulated ZEST convergence, trial freezing, answer scoring, and invalid-trial exclusion.
+- [ ] Algorithm/generator modules have unit coverage for posterior update, simulated ZEST convergence across low/mid/high true thresholds, trial freezing, answer scoring, and invalid-trial exclusion.
 - [ ] Project lint, type-check, and tests pass.
 
 ## Definition of Done

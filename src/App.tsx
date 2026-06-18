@@ -630,7 +630,8 @@ function ResultScreen({ session, onReset }: { session: TrainingSession; onReset:
       </div>
 
       <p className="result-note">
-        Threshold 越低表示在本训练任务中能识别更低对比度的 Gabor 条纹；change 为复测阈值减去初测阈值，负值表示本次短期阈值下降。
+        Training 阶段用于围绕前测阈值强化练习，不用于实时重新估计阈值。最终变化来自
+        Assessment 与 Retest 的独立阈值估计；change 为复测阈值减去初测阈值，负值表示本次短期阈值下降。
       </p>
     </section>
   );

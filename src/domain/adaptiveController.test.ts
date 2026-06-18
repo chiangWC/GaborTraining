@@ -47,27 +47,40 @@ describe('adaptiveController', () => {
     expect(lowPair).toBeCloseTo(highPair);
   });
 
-  it('converges near a simulated user threshold', () => {
-    const trueThreshold = 0.12;
-    const rng = seededRandom(42);
-    let state = initializeThresholdState('contrast-detection', 4);
+  it.each([
+    { trueThreshold: 0.04, seed: 17, minEstimate: 0.025, maxEstimate: 0.075 },
+    { trueThreshold: 0.12, seed: 42, minEstimate: 0.08, maxEstimate: 0.17 },
+    { trueThreshold: 0.2, seed: 71, minEstimate: 0.13, maxEstimate: 0.3 },
+    { trueThreshold: 0.45, seed: 109, minEstimate: 0.28, maxEstimate: 0.68 },
+  ])(
+    'converges near a simulated user threshold of $trueThreshold',
+    ({ trueThreshold, seed, minEstimate, maxEstimate }) => {
+      const state = simulateUserThreshold(trueThreshold, seed);
 
-    for (let index = 0; index < 120; index += 1) {
-      const contrast = nextContrastForState(state);
-      const pCorrect = psychometricCorrectProbability(contrast, trueThreshold);
-      const trial = makeTrial({
-        trialIndex: index + 1,
-        contrast,
-        isCorrect: rng() < pCorrect,
-        answeredAt: new Date(400 + index).toISOString(),
-      });
-      state = updateThresholdState(state, trial);
-    }
-
-    expect(state.currentThresholdEstimate).toBeGreaterThan(0.08);
-    expect(state.currentThresholdEstimate).toBeLessThan(0.17);
-  });
+      expect(state.currentThresholdEstimate).toBeGreaterThan(minEstimate);
+      expect(state.currentThresholdEstimate).toBeLessThan(maxEstimate);
+    },
+  );
 });
+
+function simulateUserThreshold(trueThreshold: number, seed: number) {
+  const rng = seededRandom(seed);
+  let state = initializeThresholdState('contrast-detection', 4);
+
+  for (let index = 0; index < 120; index += 1) {
+    const contrast = nextContrastForState(state);
+    const pCorrect = psychometricCorrectProbability(contrast, trueThreshold);
+    const trial = makeTrial({
+      trialIndex: index + 1,
+      contrast,
+      isCorrect: rng() < pCorrect,
+      answeredAt: new Date(400 + index).toISOString(),
+    });
+    state = updateThresholdState(state, trial);
+  }
+
+  return state;
+}
 
 function makeTrial(overrides: Partial<Trial>): Trial {
   return {
